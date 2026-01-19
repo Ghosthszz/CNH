@@ -6,5 +6,13 @@
     "forma": "Dinheiro",
     "imagem": "",
     "data": "2026-01-19T15:39:22.355Z"
+  },
+  {
+    "id": 1768837634741,
+    "descricao": "Uber (ida)",
+    "valor": "36.00",
+    "forma": "Débito",
+    "imagem": "https://raw.githubusercontent.com/ghosthszz/CNH/main/comprovantes/1768837633355-1000059245.jpg",
+    "data": "2026-01-19T15:47:14.741Z"
   }
 ]
