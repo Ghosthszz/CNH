@@ -11,7 +11,7 @@
     "id": 1768837634741,
     "descricao": "Uber (ida)",
     "valor": "36.00",
-    "forma": "DÃ©bito",
+    "forma": "DÃƒÂ©bito",
     "imagem": "https://raw.githubusercontent.com/ghosthszz/CNH/main/comprovantes/1768837633355-1000059245.jpg",
     "data": "2026-01-19T15:47:14.741Z"
   },
@@ -19,7 +19,7 @@
     "id": 1768837662611,
     "descricao": "Uber (volta)",
     "valor": "18.90",
-    "forma": "Débito",
+    "forma": "DÃ©bito",
     "imagem": "https://raw.githubusercontent.com/ghosthszz/CNH/main/comprovantes/1768837661402-1000059248.jpg",
     "data": "2026-01-19T15:47:42.611Z"
   },
@@ -27,8 +27,16 @@
     "id": 1769006614549,
     "descricao": "Uber (lancar no sistema Detran \"SOMENTE IDA\")",
     "valor": "17.00",
-    "forma": "D�bito",
+    "forma": "Débito",
     "imagem": "https://raw.githubusercontent.com/ghosthszz/CNH/main/comprovantes/1769006613535-1000059444.jpg",
     "data": "2026-01-21T14:43:34.549Z"
+  },
+  {
+    "id": 1769182616843,
+    "descricao": "Exame medico",
+    "valor": "90.00",
+    "forma": "Dinheiro",
+    "imagem": "",
+    "data": "2026-01-23T15:36:56.843Z"
   }
 ]
